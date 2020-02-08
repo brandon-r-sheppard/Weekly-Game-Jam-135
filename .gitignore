@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/Weekly-Game-Jam-135/v16
+/UIElementsSchema
+/Library
+/obj/Debug
+/Assembly-CSharp-Editor.csproj
+/Weekly-Game-Jam-135.sln
