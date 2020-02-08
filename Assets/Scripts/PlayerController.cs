@@ -10,14 +10,21 @@ public class PlayerController : MonoBehaviour
     private const float BULLET_SPEED = 50f;
     public GameObject BulletPrefab;//Remove later
     public GameObject FireLocation;
+    public GameObject ActiveGoggles;
+    public GameObject InactiveGoggles;
     private GUN _activeWeapon;
     private Queue<GUN> _inventory;
+    private Animator _anim;
+    private Vector2 _lastIncrement;
     // Start is called before the first frame update
     void Start()
     {
         _inventory = new Queue<GUN>();
         _inventory.Enqueue(GUN.TMP);
         _activeWeapon = _inventory.Dequeue();
+        _anim = gameObject.GetComponent<Animator>();
+        _anim.SetBool("HAS_GUN", true);
+        _anim.SetBool("IS_IDLE", true);
     }
 
     /// <summary>
@@ -28,28 +35,32 @@ public class PlayerController : MonoBehaviour
         _inventory.Enqueue(_activeWeapon);
         _activeWeapon = _inventory.Dequeue();
     }
-    void Shoot()
+    IEnumerator Shoot()
     {
+        _anim.SetBool("IS_SHOOTING", true);
+        yield return new WaitForSeconds(0.2f);
+        InactiveGoggles.GetComponent<SkinnedMeshRenderer>().enabled = false;
+        ActiveGoggles.GetComponent<SkinnedMeshRenderer>().enabled = true;
         GameObject bullet = null;
         if (_activeWeapon == GUN.TMP)
             bullet = GameObject.Instantiate(BulletPrefab);
         //Add new gun prefabs here as else if statements, make sure to add the appropriate GUN enum
 
-        if (bullet == null)
-            return; //Chicken out so we don't get a null object error
         bullet.transform.position = FireLocation.transform.position;
         
-        //Lazy fix to game object rotation be wrong. I am using the transform.right as the transform.forward in the velocity calculation
-        bullet.GetComponent<Rigidbody>().velocity = transform.right * BULLET_SPEED;
+        bullet.GetComponent<Rigidbody>().velocity = transform.forward * BULLET_SPEED;
     }
     /// <summary>
     /// Function to determine how to move the player for a given frame.
     /// </summary>
-    void MovePlayer()
+    Vector2 MovePlayer()
     {
+        _anim.SetBool("IS_IDLE", false);
         float x = Input.GetAxis("Horizontal") * MOVE_SPEED * Time.deltaTime;
         float z = Input.GetAxis("Vertical") * MOVE_SPEED * Time.deltaTime;
         transform.position += new Vector3(x, 0, z);
+        _anim.SetBool("IS_RUNNING", (x == 0 && z == 0 ? false : true));
+        return new Vector2(x, z);
     }
 
     /// <summary>
@@ -65,7 +76,7 @@ public class PlayerController : MonoBehaviour
         mousePos.y = mousePos.y - objectPos.y;
 
         float angle = -(Mathf.Atan2(mousePos.y, mousePos.x) * Mathf.Rad2Deg);
-        transform.rotation = Quaternion.Euler(new Vector3(0, angle, 0));
+        transform.rotation = Quaternion.Euler(new Vector3(0, angle + 90, 0));
     }
 
     /// <summary>
@@ -73,16 +84,27 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void DebugInput()
     {
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKey(KeyCode.F))
         {
-            Shoot();
+            StartCoroutine(Shoot());
         }
+        else
+        {
+            StopAllCoroutines();
+            _anim.SetBool("IS_SHOOTING", false);
+            InactiveGoggles.GetComponent<SkinnedMeshRenderer>().enabled = true;
+            ActiveGoggles.GetComponent<SkinnedMeshRenderer>().enabled = false;
+            if (_lastIncrement == Vector2.zero)
+                _anim.SetBool("IS_IDLE", true);
+            Debug.Log("I got here...");
+        }
+            
     }
     // Update is called once per frame
     void Update()
     {
         RotateToMouse();
-        MovePlayer();
+        _lastIncrement = MovePlayer();
         DebugInput(); //Remove Later
     }
 }
