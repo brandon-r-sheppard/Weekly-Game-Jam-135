@@ -96,7 +96,7 @@ public class PlayerController : MonoBehaviour
             ActiveGoggles.GetComponent<SkinnedMeshRenderer>().enabled = false;
             if (_lastIncrement == Vector2.zero)
                 _anim.SetBool("IS_IDLE", true);
-            Debug.Log("I got here...");
+            //Debug.Log("I got here...");
         }
             
     }
